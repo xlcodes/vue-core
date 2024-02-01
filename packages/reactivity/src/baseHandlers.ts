@@ -30,14 +30,40 @@ import {
 import { isRef } from './ref'
 import { warn } from './warning'
 
+/**
+ * 不可追踪的键标识
+ * @description 相当于做了如下处理
+ * const set = new Set(`__proto__,__v_isRef,__isVue`.split(','));
+ * set => Set(3) {'__proto__', '__v_isRef', '__isVue'}
+ * return value => set.has(value)
+ */
 const isNonTrackableKeys = /*#__PURE__*/ makeMap(`__proto__,__v_isRef,__isVue`)
 
+/**
+ * 内置的 Symbol
+ * @description 相当于创建了一个包含如下内容的 Set 对象
+ * Symbol(Symbol.asyncIterator)
+ * Symbol(Symbol.hasInstance)
+ * Symbol(Symbol.isConcatSpreadable)
+ * Symbol(Symbol.iterator)
+ * Symbol(Symbol.match)
+ * Symbol(Symbol.matchAll)
+ * Symbol(Symbol.replace)
+ * Symbol(Symbol.search)
+ * Symbol(Symbol.species)
+ * Symbol(Symbol.split)
+ * Symbol(Symbol.toPrimitive)
+ * Symbol(Symbol.toStringTag)
+ * Symbol(Symbol.unscopables)
+ */
 const builtInSymbols = new Set(
   /*#__PURE__*/
   Object.getOwnPropertyNames(Symbol)
     // ios10.x Object.getOwnPropertyNames(Symbol) can enumerate 'arguments' and 'caller'
     // but accessing them on Symbol leads to TypeError because Symbol is a strict mode
     // function
+    // ios10.x Object.getOwnPropertyNames(Symbol)可以枚举 'arguments' 和 'caller'
+    // 但在Symbol上访问它们会导致TypeError，因为Symbol是严格模式函数
     .filter(key => key !== 'arguments' && key !== 'caller')
     .map(key => (Symbol as any)[key])
     .filter(isSymbol),
@@ -45,6 +71,13 @@ const builtInSymbols = new Set(
 
 const arrayInstrumentations = /*#__PURE__*/ createArrayInstrumentations()
 
+/**
+ * 处理数组的方法
+ * @description
+ * INFO：个人猜想
+ * Object.defineProperty() 无法监听到数组的变化，
+ * 因此在框架内部对数组的变更方法进行了包裹，以达到监听数据变化的目的
+ */
 function createArrayInstrumentations() {
   const instrumentations: Record<string, Function> = {}
   // instrument identity-sensitive Array methods to account for possible reactive
@@ -81,6 +114,7 @@ function createArrayInstrumentations() {
 }
 
 function hasOwnProperty(this: object, key: string) {
+  // 将 this 转换为原始对象
   const obj = toRaw(this)
   track(obj, TrackOpTypes.HAS, key)
   return obj.hasOwnProperty(key)
@@ -226,6 +260,7 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     }
     return result
   }
+
   ownKeys(target: object): (string | symbol)[] {
     track(
       target,

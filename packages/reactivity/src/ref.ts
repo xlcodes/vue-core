@@ -26,6 +26,19 @@ import { type Dep, createDep } from './dep'
 import { ComputedRefImpl } from './computed'
 import { getDepFromReactive } from './reactiveEffect'
 
+/**
+ * const RefSymbol: unique symbol
+ * 这一行代码声明了一个常量RefSymbol，其类型是unique symbol。
+ * 在TypeScript中，symbol是一种基本数据类型，而unique symbol是TypeScript 2.7及更高版本引入的一种特殊的symbol类型。
+ * unique symbol在类型系统中确保其实例是唯一的，不可与其他symbol类型互相赋值。
+ *
+ * export declare const RawSymbol: unique symbol
+ * 这一行代码声明了一个导出的常量RawSymbol，其类型也是unique symbol。
+ * export declare用于在模块中声明导出的类型，但是具体的实现留给模块的使用者。
+ * 这表示在你的代码中，其他文件引入这个模块时，可以使用RawSymbol，但具体的实现需要在引入的地方进行声明。
+ * 总的来说，这两行代码创建了两个常量，分别是RefSymbol和RawSymbol，它们的类型都是独一无二的symbol，用于在代码中创建具有唯一性的标识符。
+ * 这样的设计通常用于确保在代码中使用的标识符是唯一的，避免命名冲突等问题。
+ */
 declare const RefSymbol: unique symbol
 export declare const RawSymbol: unique symbol
 
@@ -44,8 +57,14 @@ type RefBase<T> = {
   value: T
 }
 
+/**
+ * 追踪 ref 的值
+ * @param ref
+ */
 export function trackRefValue(ref: RefBase<any>) {
+  // 应该追踪并且 effect 作用域是被激活的
   if (shouldTrack && activeEffect) {
+    // ref 转为原始对象
     ref = toRaw(ref)
     trackEffect(
       activeEffect,
@@ -65,12 +84,20 @@ export function trackRefValue(ref: RefBase<any>) {
   }
 }
 
+/**
+ * 修改 ref 的值
+ * @description 可以简单理解为 ref 的 set 方法，会走到这里
+ * @param ref 当前的 ref
+ * @param dirtyLevel 脏值等级
+ * @param newVal 新的值
+ */
 export function triggerRefValue(
   ref: RefBase<any>,
   dirtyLevel: DirtyLevels = DirtyLevels.Dirty,
   newVal?: any,
 ) {
   ref = toRaw(ref)
+  // 获取到
   const dep = ref.dep
   if (dep) {
     triggerEffects(

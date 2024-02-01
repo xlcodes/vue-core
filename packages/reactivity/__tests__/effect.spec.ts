@@ -23,16 +23,19 @@ import {
   serializeInner,
 } from '@vue/runtime-test'
 
-describe('reactivity/effect', () => {
-  it('should run the passed function once (wrapped by a effect)', () => {
+describe('effect 作用域', () => {
+  it('作为回调函数被 effect 包裹的函数应当被调用', () => {
     const fnSpy = vi.fn(() => {})
     effect(fnSpy)
+    // 断言 fnSpy 调用次数
     expect(fnSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('should observe basic properties', () => {
+  it('一个属性被观察', () => {
     let dummy
     const counter = reactive({ num: 0 })
+    // 通过 effect 创建一个副作用函数，并将其赋值给 dummy
+    // 此时 dummy 就包含了响应式的特性，会根据 counter.num 变化而变化
     effect(() => (dummy = counter.num))
 
     expect(dummy).toBe(0)
@@ -40,9 +43,10 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe(7)
   })
 
-  it('should observe multiple properties', () => {
+  it('多个属性被观察', () => {
     let dummy
     const counter = reactive({ num1: 0, num2: 0 })
+    // 在这里做一些处理逻辑
     effect(() => (dummy = counter.num1 + counter.num1 + counter.num2))
 
     expect(dummy).toBe(0)
@@ -50,7 +54,7 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe(21)
   })
 
-  it('should handle multiple effects', () => {
+  it('创建多个 effect 作用域', () => {
     let dummy1, dummy2
     const counter = reactive({ num: 0 })
     effect(() => (dummy1 = counter.num))
@@ -63,7 +67,7 @@ describe('reactivity/effect', () => {
     expect(dummy2).toBe(1)
   })
 
-  it('should observe nested properties', () => {
+  it('嵌套属性也应当被观察到', () => {
     let dummy
     const counter = reactive({ nested: { num: 0 } })
     effect(() => (dummy = counter.nested.num))
@@ -73,7 +77,7 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe(8)
   })
 
-  it('should observe delete operations', () => {
+  it('删除操作也应当被观察到', () => {
     let dummy
     const obj = reactive<{
       prop?: string
@@ -85,7 +89,7 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe(undefined)
   })
 
-  it('should observe has operations', () => {
+  it('在 effect 作用域中做一些操作，操作应当被观测到', () => {
     let dummy
     const obj = reactive<{ prop?: string | number }>({ prop: 'value' })
     effect(() => (dummy = 'prop' in obj))
@@ -101,6 +105,7 @@ describe('reactivity/effect', () => {
     let dummy
     const counter = reactive<{ num?: number }>({ num: 0 })
     const parentCounter = reactive({ num: 2 })
+    // 将 counter 的原型指向 parentCounter
     Object.setPrototypeOf(counter, parentCounter)
     effect(() => (dummy = counter.num))
 

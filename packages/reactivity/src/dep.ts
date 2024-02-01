@@ -7,8 +7,8 @@ export type Dep = Map<ReactiveEffect, number> & {
 }
 
 export const createDep = (
-  cleanup: () => void,
-  computed?: ComputedRefImpl<any>,
+  cleanup: () => void, // 清除方法
+  computed?: ComputedRefImpl<any>, // 计算属性
 ): Dep => {
   const dep = new Map() as Dep
   dep.cleanup = cleanup

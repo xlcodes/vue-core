@@ -2,19 +2,24 @@ import { isRef, ref } from '../src/ref'
 import { isReactive, markRaw, reactive, toRaw } from '../src/reactive'
 import { computed } from '../src/computed'
 import { effect } from '../src/effect'
+import { expect } from 'vitest'
 
 describe('reactivity/reactive', () => {
-  test('Object', () => {
+  test('reactive的基本使用', () => {
+    // 创建一个普通对象
     const original = { foo: 1 }
+    // reactive 处理普通对象
     const observed = reactive(original)
     expect(observed).not.toBe(original)
+    // 此时 observed 被打上了 __v_isReactive 或者 __v_raw 标记
     expect(isReactive(observed)).toBe(true)
+    // 普通对象当然不存在这些标记
     expect(isReactive(original)).toBe(false)
-    // get
+    // get 获取值符合预期
     expect(observed.foo).toBe(1)
-    // has
+    // has foo 是响应式对象的键
     expect('foo' in observed).toBe(true)
-    // ownKeys
+    // ownKeys 包含的键符合预期
     expect(Object.keys(observed)).toEqual(['foo'])
   })
 
@@ -32,7 +37,7 @@ describe('reactivity/reactive', () => {
     expect(reactiveOther.data[0]).toBe('a')
   })
 
-  test('nested reactives', () => {
+  test('嵌套的 reactive 也符合预期值', () => {
     const original = {
       nested: {
         foo: 1,
@@ -50,10 +55,13 @@ describe('reactivity/reactive', () => {
     class CustomMap extends Map {}
     const cmap = reactive(new CustomMap())
 
+    // 断言 cmap 的实例是属于 Map 的
     expect(cmap).toBeInstanceOf(Map)
+    // cmap 同时是一个响应式对象
     expect(isReactive(cmap)).toBe(true)
 
     cmap.set('key', {})
+    // map 的 set 的值也是响应式的
     expect(isReactive(cmap.get('key'))).toBe(true)
 
     // subtypes of Set

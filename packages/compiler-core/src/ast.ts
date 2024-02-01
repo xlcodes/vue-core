@@ -31,7 +31,7 @@ export enum NodeTypes {
   ELEMENT,
   TEXT,
   COMMENT,
-  SIMPLE_EXPRESSION,
+  SIMPLE_EXPRESSION, // simple_expression => 简单表达式
   INTERPOLATION,
   ATTRIBUTE,
   DIRECTIVE,

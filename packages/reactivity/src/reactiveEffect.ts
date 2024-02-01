@@ -26,8 +26,11 @@ export const MAP_KEY_ITERATE_KEY = Symbol(__DEV__ ? 'Map key iterate' : '')
  * This will check which effect is running at the moment and record it as dep
  * which records all effects that depend on the reactive property.
  *
+ * 持有响应性属性的对象。
  * @param target - Object holding the reactive property.
+ * 定义对响应属性的访问类型。
  * @param type - Defines the type of access to the reactive property.
+ * 要跟踪的响应属性的标识符。
  * @param key - Identifier of the reactive property to track.
  */
 export function track(target: object, type: TrackOpTypes, key: unknown) {
