@@ -17,6 +17,7 @@ type SetTypes = Set<any> | WeakSet<any>
 
 const toShallow = <T extends unknown>(value: T): T => value
 
+// 获取对象的原型
 const getProto = <T extends CollectionTypes>(v: T): any =>
   Reflect.getPrototypeOf(v)
 

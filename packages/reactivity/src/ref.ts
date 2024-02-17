@@ -180,8 +180,8 @@ function createRef(rawValue: unknown, shallow: boolean) {
 }
 
 class RefImpl<T> {
-  private _value: T
-  private _rawValue: T
+  private _value: T // 当前值（Proxy）
+  private _rawValue: T // 原始值
 
   public dep?: Dep = undefined
   public readonly __v_isRef = true
@@ -196,6 +196,7 @@ class RefImpl<T> {
 
   get value() {
     trackRefValue(this)
+    // 将存储的代理对象返回
     return this._value
   }
 
@@ -247,7 +248,7 @@ export type MaybeRefOrGetter<T = any> = MaybeRef<T> | (() => T)
  * Returns the inner value if the argument is a ref, otherwise return the
  * argument itself. This is a sugar function for
  * `val = isRef(val) ? val.value : val`.
- *
+ * 是 ref 对象就返回 .value，否则就返回参数本身，这是一个语法糖函数
  * @example
  * ```js
  * function useFoo(x: number | Ref<number>) {
@@ -268,6 +269,10 @@ export function unref<T>(ref: MaybeRef<T> | ComputedRef<T>): T {
  * This is similar to {@link unref()}, except that it also normalizes getters.
  * If the argument is a getter, it will be invoked and its return value will
  * be returned.
+ * 将值/ ref / getter归一化为值。
+ * 这类似于{@link unref()}，
+ * 它也规范化了getter。
+ * 如果参数是getter，则会调用它并返回它的返回值。
  *
  * @example
  * ```js
@@ -280,6 +285,8 @@ export function unref<T>(ref: MaybeRef<T> | ComputedRef<T>): T {
  * @see {@link https://vuejs.org/api/reactivity-utilities.html#tovalue}
  */
 export function toValue<T>(source: MaybeRefOrGetter<T> | ComputedRef<T>): T {
+  // 如果是函数，则调用它并返回结果
+  // 否则通过 unref 将参数转换为普通对象
   return isFunction(source) ? source() : unref(source)
 }
 

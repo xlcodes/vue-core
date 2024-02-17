@@ -14,6 +14,48 @@ return {  }
 })"
 `;
 
+exports[`defineOptions() > defineOptions 参数为空 1`] = `
+"
+export default {
+  setup(__props, { expose: __expose }) {
+  __expose();
+
+      
+      
+return {  }
+}
+
+}"
+`;
+
+exports[`defineOptions() > defineOptions 参数为空的时候(defineOptions())不影响正常编译，只是产出结果不会包含默认导出 1`] = `
+"
+export default {
+  setup(__props, { expose: __expose }) {
+  __expose();
+
+      
+      
+return {  }
+}
+
+}"
+`;
+
+exports[`defineOptions() > defineOptions 基本功能 1`] = `
+"
+export default /*#__PURE__*/Object.assign({ name: 'FooApp' }, {
+  setup(__props, { expose: __expose }) {
+  __expose();
+
+      
+      
+return {  }
+}
+
+})"
+`;
+
 exports[`defineOptions() > empty argument 1`] = `
 "
 export default {

@@ -45,6 +45,10 @@ import { unwrapTSNode } from './babelUtils'
 export const isStaticExp = (p: JSChildNode): p is SimpleExpressionNode =>
   p.type === NodeTypes.SIMPLE_EXPRESSION && p.isStatic
 
+/**
+ * 判断是否为内置组件
+ * @param tag
+ */
 export function isCoreComponent(tag: string): symbol | void {
   switch (tag) {
     case 'Teleport':
@@ -62,7 +66,20 @@ export function isCoreComponent(tag: string): symbol | void {
   }
 }
 
+// 用于匹配使字符串不成为有效简单标识符的字符
 const nonIdentifierRE = /^\d|[^\$\w]/
+
+/**
+ * 校验传递的字符串是否为有效的标识符
+ * @param name
+ * @example
+ * console.log(isSimpleIdentifier("variable123"));  // true（仅包含字母、数字和下划线）
+ * console.log(isSimpleIdentifier("$price"));       // true（以美元符号开头）
+ * console.log(isSimpleIdentifier("user_name"));    // true（包含下划线）
+ * console.log(isSimpleIdentifier("123value"));     // false（以数字开头）
+ * console.log(isSimpleIdentifier("special@char")); // false（包含非单词字符 '@'）
+ * console.log(isSimpleIdentifier(""));             // false（空字符串）
+ */
 export const isSimpleIdentifier = (name: string): boolean =>
   !nonIdentifierRE.test(name)
 

@@ -31,7 +31,8 @@ import { isRef } from './ref'
 import { warn } from './warning'
 
 /**
- * 不可追踪的键标识
+ * 不需要追踪的属性
+ * 内置标识符号不需要响应式处理，因为一般标记之后就不会变化了
  * @description 相当于做了如下处理
  * const set = new Set(`__proto__,__v_isRef,__isVue`.split(','));
  * set => Set(3) {'__proto__', '__v_isRef', '__isVue'}
@@ -79,6 +80,10 @@ const arrayInstrumentations = /*#__PURE__*/ createArrayInstrumentations()
  * 因此在框架内部对数组的变更方法进行了包裹，以达到监听数据变化的目的
  */
 function createArrayInstrumentations() {
+  // 数组方法依赖收集
+  // 这种处理是为了兼容 Object.defineProperty() 针对数组无法处理的情况
+  // 将数组中的原始方法收集起来，以便数组方法同样也可以触发依赖收集
+  // ES6 中的 Proxy 则不存在这种问题
   const instrumentations: Record<string, Function> = {}
   // instrument identity-sensitive Array methods to account for possible reactive
   // values
@@ -89,9 +94,11 @@ function createArrayInstrumentations() {
         track(arr, TrackOpTypes.GET, i + '')
       }
       // we run the method using the original args first (which may be reactive)
+      // 我们首先使用原始参数运行该方法(可能是响应式的)
       const res = arr[key](...args)
       if (res === -1 || res === false) {
         // if that didn't work, run it again using raw values.
+        // 如果不能正常工作，则使用原始值再次运行
         return arr[key](...args.map(toRaw))
       } else {
         return res
@@ -100,6 +107,7 @@ function createArrayInstrumentations() {
   })
   // instrument length-altering mutation methods to avoid length being tracked
   // which leads to infinite loops in some cases (#2137)
+  // 这些方法会改变数组长度，避免数组长度被追踪，以避免某些情况下出现无限循环(#2137)
   ;(['push', 'pop', 'shift', 'unshift', 'splice'] as const).forEach(key => {
     instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
       pauseTracking()
@@ -173,6 +181,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
       return res
     }
 
+    // 只读属性不会触发依赖，因此就没必要被收集起来
     if (!isReadonly) {
       track(target, TrackOpTypes.GET, key)
     }
@@ -183,6 +192,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
 
     if (isRef(res)) {
       // ref unwrapping - skip unwrap for Array + integer key.
+      // eg: arr[0] 这种情况直接跳过
       return targetIsArray && isIntegerKey(key) ? res : res.value
     }
 
@@ -271,11 +281,17 @@ class MutableReactiveHandler extends BaseReactiveHandler {
   }
 }
 
+/**
+ * 只读的 reactive 处理函数
+ * set 和 delete 的时候都报警告⚠️
+ */
 class ReadonlyReactiveHandler extends BaseReactiveHandler {
   constructor(shallow = false) {
+    // 实例化的时候就透传了 isReadonly 标识，是否浅层响应，则看用户传递的值
     super(true, shallow)
   }
 
+  // 在开发环境调用 setter，报警告
   set(target: object, key: string | symbol) {
     if (__DEV__) {
       warn(
@@ -286,6 +302,7 @@ class ReadonlyReactiveHandler extends BaseReactiveHandler {
     return true
   }
 
+  // 在开发环境调用 delete，报警告
   deleteProperty(target: object, key: string | symbol) {
     if (__DEV__) {
       warn(

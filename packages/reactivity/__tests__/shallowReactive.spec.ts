@@ -8,14 +8,16 @@ import {
 
 import { effect } from '../src/effect'
 import { type Ref, isRef, ref } from '../src/ref'
+import { expect } from 'vitest'
 
 describe('shallowReactive', () => {
-  test('should not make non-reactive properties reactive', () => {
+  test('深层次的对象不具备响应式', () => {
     const props = shallowReactive({ n: { foo: 1 } })
     expect(isReactive(props.n)).toBe(false)
+    expect(isReactive(props)).toBe(true)
   })
 
-  test('should keep reactive properties reactive', () => {
+  test('如果 shallowReactive 对象的值被设置为响应式，那么这个值的响应式可以保持', () => {
     const props: any = shallowReactive({ n: reactive({ foo: 1 }) })
     props.n = reactive({ foo: 2 })
     expect(isReactive(props.n)).toBe(true)
@@ -31,7 +33,7 @@ describe('shallowReactive', () => {
     expect(isReactive(reactiveProxy.foo)).toBe(true)
   })
 
-  test('isShallow', () => {
+  test('shallowReactive 和 shallowReadonly 均具有浅层标识 __v_isShallow', () => {
     expect(isShallow(shallowReactive({}))).toBe(true)
     expect(isShallow(shallowReadonly({}))).toBe(true)
   })
@@ -39,7 +41,9 @@ describe('shallowReactive', () => {
   // #5271
   test('should respect shallow reactive nested inside reactive on reset', () => {
     const r = reactive({ foo: shallowReactive({ bar: {} }) })
+    // r.foo 被标记为浅层响应
     expect(isShallow(r.foo)).toBe(true)
+    // r.foo 内部的对象均不具备响应式
     expect(isReactive(r.foo.bar)).toBe(false)
 
     r.foo = shallowReactive({ bar: {} })

@@ -91,7 +91,7 @@ export class ComputedRefImpl<T> {
   }
 
   // #region polyfill _dirty for backward compatibility third party code for Vue <= 3.3.x
-  // TODO：缓存造成污染的数据？？？
+  // ISSUE：缓存造成污染的数据？？？
   get _dirty() {
     return this.effect.dirty
   }

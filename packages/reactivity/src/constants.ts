@@ -18,7 +18,7 @@ export enum TriggerOpTypes {
 
 // 响应式标识
 export enum ReactiveFlags {
-  SKIP = '__v_skip',
+  SKIP = '__v_skip', // 不做任何处理，传递了这个标识，响应式处理不会生效
   IS_REACTIVE = '__v_isReactive', // 是响应式对象
   IS_READONLY = '__v_isReadonly', // 是只读的响应式对象
   IS_SHALLOW = '__v_isShallow', // 是浅层次响应式对象

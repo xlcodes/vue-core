@@ -46,6 +46,7 @@ export class ReactiveEffect<T = any> {
   onTrigger?: (event: DebuggerEvent) => void
 
   /**
+   * 当前值污染等级
    * @internal
    */
   _dirtyLevel = DirtyLevels.Dirty
@@ -130,6 +131,10 @@ export class ReactiveEffect<T = any> {
   }
 }
 
+/**
+ * 触发计算拿到计算属性的值
+ * @param computed
+ */
 function triggerComputed(computed: ComputedRefImpl<any>) {
   return computed.value
 }
@@ -148,6 +153,11 @@ function postCleanupEffect(effect: ReactiveEffect) {
   }
 }
 
+/**
+ * Dep => Map<ReactiveEffect, number> & { cleanup: () => void computed?: ComputedRefImpl<any> }
+ * @param dep
+ * @param effect
+ */
 function cleanupDepEffect(dep: Dep, effect: ReactiveEffect) {
   const trackId = dep.get(effect)
   if (trackId !== undefined && effect._trackId !== trackId) {
@@ -195,14 +205,20 @@ export function effect<T = any>(
   }
 
   const _effect = new ReactiveEffect(fn, NOOP, () => {
+    // [0, 1, 2].includes(_effect.dirty)
+    // 当 _effect 的值可能被污染了或者已经被污染了的时候，就调用 run 方法
     if (_effect.dirty) {
       _effect.run()
     }
   })
   if (options) {
+    // 将传递的 options 与当前对象合并
     extend(_effect, options)
+    // 如果传递的参数包含 scope，则创建一个新的作用域
     if (options.scope) recordEffectScope(_effect, options.scope)
   }
+  // 不包含参数 或者参数配置了懒加载
+  // 则直接执行一次
   if (!options || !options.lazy) {
     _effect.run()
   }
@@ -213,7 +229,7 @@ export function effect<T = any>(
 
 /**
  * Stops the effect associated with the given runner.
- *
+ * 将与 runner 有关联的 effect 全部停止
  * @param runner - Association with the effect to stop tracking.
  */
 export function stop(runner: ReactiveEffectRunner) {
@@ -227,6 +243,7 @@ const trackStack: boolean[] = []
 
 /**
  * Temporarily pauses tracking.
+ * 暂时暂停跟踪。
  */
 export function pauseTracking() {
   trackStack.push(shouldTrack)
@@ -242,20 +259,27 @@ export function enableTracking() {
 }
 
 /**
- * Resets the previous global effect tracking state.
+ * 重置之前的全局效果跟踪状态
  */
 export function resetTracking() {
   const last = trackStack.pop()
   shouldTrack = last === undefined ? true : last
 }
 
+/**
+ * 调度器暂停
+ */
 export function pauseScheduling() {
   pauseScheduleStack++
 }
 
+/**
+ * 递归重置调度器
+ */
 export function resetScheduling() {
   pauseScheduleStack--
   while (!pauseScheduleStack && queueEffectSchedulers.length) {
+    // 依次将调度函数移出队列并执行
     queueEffectSchedulers.shift()!()
   }
 }
@@ -263,7 +287,7 @@ export function resetScheduling() {
 export function trackEffect(
   effect: ReactiveEffect,
   dep: Dep,
-  debuggerEventExtraInfo?: DebuggerEventExtraInfo,
+  debuggerEventExtraInfo?: DebuggerEventExtraInfo, // 只有 __DEV__ 环境才会传递
 ) {
   if (dep.get(effect) !== effect._trackId) {
     dep.set(effect, effect._trackId)
@@ -276,6 +300,7 @@ export function trackEffect(
     } else {
       effect._depsLength++
     }
+    // 在开发环境处理用户传递的 onTrack 函数
     if (__DEV__) {
       effect.onTrack?.(extend({ effect }, debuggerEventExtraInfo!))
     }
@@ -299,6 +324,7 @@ export function triggerEffects(
       effect._dirtyLevel = dirtyLevel
       if (lastDirtyLevel === DirtyLevels.NotDirty) {
         effect._shouldSchedule = true
+        // 开发环境触发用户传递的 onTrigger 函数
         if (__DEV__) {
           effect.onTrigger?.(extend({ effect }, debuggerEventExtraInfo))
         }
@@ -310,6 +336,10 @@ export function triggerEffects(
   resetScheduling()
 }
 
+/**
+ * 调度处理 dep 依赖
+ * @param dep
+ */
 export function scheduleEffects(dep: Dep) {
   for (const effect of dep.keys()) {
     if (

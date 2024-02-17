@@ -1,4 +1,5 @@
 import { assertCode, compileSFCScript as compile } from '../utils'
+import { expect } from 'vitest'
 
 describe('defineSlots()', () => {
   test('basic usage', () => {

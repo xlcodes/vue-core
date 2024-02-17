@@ -32,6 +32,7 @@ export const MAP_KEY_ITERATE_KEY = Symbol(__DEV__ ? 'Map key iterate' : '')
  * @param type - Defines the type of access to the reactive property.
  * 要跟踪的响应属性的标识符。
  * @param key - Identifier of the reactive property to track.
+ * ISSUE: 可能是与触发依赖相关逻辑
  */
 export function track(target: object, type: TrackOpTypes, key: unknown) {
   if (shouldTrack && activeEffect) {
@@ -148,6 +149,11 @@ export function trigger(
   resetScheduling()
 }
 
+/**
+ * 从 reactive 中获取 dep
+ * @param object
+ * @param key
+ */
 export function getDepFromReactive(object: any, key: string | number | symbol) {
   return targetMap.get(object)?.get(key)
 }

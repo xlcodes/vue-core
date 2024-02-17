@@ -16,12 +16,15 @@ export function processDefineOptions(
   if (!isCallOf(node, DEFINE_OPTIONS)) {
     return false
   }
+  // 判断 defineOptions 是否重复调用
   if (ctx.hasDefineOptionsCall) {
     ctx.error(`duplicate ${DEFINE_OPTIONS}() call`, node)
   }
+  // defineOptions 声明类型参数会报错
   if (node.typeParameters) {
     ctx.error(`${DEFINE_OPTIONS}() cannot accept type arguments`, node)
   }
+  // defineOptions()
   if (!node.arguments[0]) return true
 
   ctx.hasDefineOptionsCall = true
@@ -45,24 +48,28 @@ export function processDefineOptions(
     }
   }
 
+  // 针对 props 的报错
   if (propsOption) {
     ctx.error(
       `${DEFINE_OPTIONS}() cannot be used to declare props. Use ${DEFINE_PROPS}() instead.`,
       propsOption,
     )
   }
+  // 针对 emits 的报错
   if (emitsOption) {
     ctx.error(
       `${DEFINE_OPTIONS}() cannot be used to declare emits. Use ${DEFINE_EMITS}() instead.`,
       emitsOption,
     )
   }
+  // 针对 expose 的报错
   if (exposeOption) {
     ctx.error(
       `${DEFINE_OPTIONS}() cannot be used to declare expose. Use ${DEFINE_EXPOSE}() instead.`,
       exposeOption,
     )
   }
+  // 针对插槽的报错
   if (slotsOption) {
     ctx.error(
       `${DEFINE_OPTIONS}() cannot be used to declare slots. Use ${DEFINE_SLOTS}() instead.`,

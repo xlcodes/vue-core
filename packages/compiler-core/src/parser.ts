@@ -1021,6 +1021,7 @@ function reset() {
 export function baseParse(input: string, options?: ParserOptions): RootNode {
   reset()
   currentInput = input
+  // extend => Object.assign
   currentOptions = extend({}, defaultParserOptions)
 
   if (options) {

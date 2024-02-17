@@ -1,5 +1,6 @@
 import { BindingTypes } from '@vue/compiler-core'
 import { assertCode, compileSFCScript as compile, mockId } from './utils'
+import { expect } from 'vitest'
 
 describe('SFC compile <script setup>', () => {
   test('should compile JS syntax', () => {
@@ -461,6 +462,43 @@ describe('SFC compile <script setup>', () => {
         `,
         { inlineTemplate: true },
       )
+
+      expect(content).toMatchInlineSnapshot(`
+        "import { vModelText as _vModelText, createElementVNode as _createElementVNode, withDirectives as _withDirectives, unref as _unref, isRef as _isRef, Fragment as _Fragment, openBlock as _openBlock, createElementBlock as _createElementBlock } from "vue"
+
+        import { ref } from 'vue'
+                
+        export default {
+          setup(__props) {
+
+                const count = ref(0)
+                const maybe = foo()
+                let lett = 1
+                
+        return (_ctx, _cache) => {
+          return (_openBlock(), _createElementBlock(_Fragment, null, [
+            _withDirectives(_createElementVNode("input", {
+              "onUpdate:modelValue": _cache[0] || (_cache[0] = $event => ((count).value = $event))
+            }, null, 512 /* NEED_PATCH */), [
+              [_vModelText, count.value]
+            ]),
+            _withDirectives(_createElementVNode("input", {
+              "onUpdate:modelValue": _cache[1] || (_cache[1] = $event => (_isRef(maybe) ? (maybe).value = $event : null))
+            }, null, 512 /* NEED_PATCH */), [
+              [_vModelText, _unref(maybe)]
+            ]),
+            _withDirectives(_createElementVNode("input", {
+              "onUpdate:modelValue": _cache[2] || (_cache[2] = $event => (_isRef(lett) ? (lett).value = $event : lett = $event))
+            }, null, 512 /* NEED_PATCH */), [
+              [_vModelText, _unref(lett)]
+            ])
+          ], 64 /* STABLE_FRAGMENT */))
+        }
+        }
+
+        }"
+      `)
+
       // known const ref: set value
       expect(content).toMatch(`(count).value = $event`)
       // const but maybe ref: assign if ref, otherwise do nothing

@@ -1,34 +1,67 @@
 import { assertCode, compileSFCScript as compile } from '../utils'
+import { expect } from 'vitest'
 
 describe('defineOptions()', () => {
-  test('basic usage', () => {
+  test('defineOptions 基本功能', () => {
     const { content } = compile(`
       <script setup>
       defineOptions({ name: 'FooApp' })
       </script>
     `)
     assertCode(content)
-    // should remove defineOptions import and call
+
+    expect(content).toMatchInlineSnapshot(`
+      "
+      export default /*#__PURE__*/Object.assign({ name: 'FooApp' }, {
+        setup(__props, { expose: __expose }) {
+        __expose();
+
+            
+            
+      return {  }
+      }
+
+      })"
+    `)
+
+    // 编译产出应当移除 ‘defineOptions’
     expect(content).not.toMatch('defineOptions')
-    // should include context options in default export
+    // 编译产出符合预期
+    // 在包含参数的时候，默认导出内容会基于 Object.assign 合并
     expect(content).toMatch(
       `export default /*#__PURE__*/Object.assign({ name: 'FooApp' }, `,
     )
   })
 
-  test('empty argument', () => {
+  test('defineOptions 参数为空的时候(defineOptions())不影响正常编译，只是产出结果不会包含默认导出', () => {
+    // INFO: defineOptions({}) 都不属于这条测试用例
     const { content } = compile(`
       <script setup>
       defineOptions()
       </script>
     `)
     assertCode(content)
+
+    expect(content).toMatchInlineSnapshot(`
+      "
+      export default {
+        setup(__props, { expose: __expose }) {
+        __expose();
+
+            
+            
+      return {  }
+      }
+
+      }"
+    `)
+
     expect(content).toMatch(`export default {`)
-    // should remove defineOptions import and call
+    // 参数为空的时候，‘defineOptions’ 也应当被移除
     expect(content).not.toMatch('defineOptions')
   })
 
-  it('should emit an error with two defineOptions', () => {
+  it('defineOptions 重复调用的时候报警告', () => {
     expect(() =>
       compile(`
       <script setup>
@@ -39,7 +72,9 @@ describe('defineOptions()', () => {
     ).toThrowError('[@vue/compiler-sfc] duplicate defineOptions() call')
   })
 
-  it('should emit an error with props or emits property', () => {
+  it('defineOptions 参数不能包含 props、emits 等包含 defineXXX 的参数，否则会报警告', () => {
+    // INFO: 这里应该是为了隔离 Props 这些关键字，就将这些参数作为了保留字
+    // ISSUE: 可能针对 defineProps 这些 API，也会做同样处理
     expect(() =>
       compile(`
       <script setup>
@@ -81,7 +116,7 @@ describe('defineOptions()', () => {
     )
   })
 
-  it('should emit an error with type generic', () => {
+  it('defineOptions 指定类型会报错，这里可以判断 defineOptions 不能指定类型', () => {
     expect(() =>
       compile(`
       <script setup lang="ts">
@@ -93,7 +128,7 @@ describe('defineOptions()', () => {
     )
   })
 
-  it('should emit an error with type assertion', () => {
+  it('defineOptions 不能用来声明 props，否则会报错', () => {
     expect(() =>
       compile(`
       <script setup lang="ts">
@@ -105,7 +140,7 @@ describe('defineOptions()', () => {
     )
   })
 
-  it('should emit an error with declaring props/emits/slots/expose', () => {
+  it('给 defineOptions 传递如下参数会报错：props/emits/slots/expose', () => {
     expect(() =>
       compile(`
         <script setup>
