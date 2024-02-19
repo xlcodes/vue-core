@@ -139,6 +139,7 @@ export interface ImportBinding {
  * Compile `<script setup>`
  * It requires the whole SFC descriptor because we need to handle and merge
  * normal `<script>` + `<script setup>` if both are present.
+ * 编译 script 标签
  */
 export function compileScript(
   sfc: SFCDescriptor,
