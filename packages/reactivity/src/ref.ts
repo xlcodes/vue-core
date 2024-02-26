@@ -192,6 +192,9 @@ class RefImpl<T> {
   ) {
     this._rawValue = __v_isShallow ? value : toRaw(value)
     this._value = __v_isShallow ? value : toReactive(value)
+
+    // eslint-disable-next-line no-console
+    console.log(this, '=== ref constrictor ===')
   }
 
   get value() {

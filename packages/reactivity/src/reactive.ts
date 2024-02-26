@@ -405,6 +405,7 @@ export function isProxy(value: unknown): boolean {
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#toraw}
  */
 export function toRaw<T>(observed: T): T {
+  // ReactiveFlags.RAW：对原始对象对标识
   const raw = observed && (observed as Target)[ReactiveFlags.RAW]
   return raw ? toRaw(raw) : observed
 }

@@ -138,12 +138,16 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     const isReadonly = this._isReadonly,
       shallow = this._shallow
     if (key === ReactiveFlags.IS_REACTIVE) {
+      // 如果访问的是 __v_isReactive 属性，那么返回 isReadonly 的取反值
       return !isReadonly
     } else if (key === ReactiveFlags.IS_READONLY) {
+      //  // 如果访问的是 __v_isReadonly 属性，那么返回 isReadonly 的值
       return isReadonly
     } else if (key === ReactiveFlags.IS_SHALLOW) {
+      // 如果访问的是 __v_isShallow 属性，那么返回 shallow 的值
       return shallow
     } else if (key === ReactiveFlags.RAW) {
+      // 如果访问的是 __v_raw 属性，并且有一堆条件满足，那么返回 target
       if (
         receiver ===
           (isReadonly
@@ -164,42 +168,49 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
       return
     }
 
+    // target 是否是数组
     const targetIsArray = isArray(target)
 
+    // 如果不是只读的
     if (!isReadonly) {
+      // 如果是数组，并且访问的是数组的一些方法，那么返回对应的方法
       if (targetIsArray && hasOwn(arrayInstrumentations, key)) {
         return Reflect.get(arrayInstrumentations, key, receiver)
       }
+      // 如果访问的是 hasOwnProperty 方法，那么返回 hasOwnProperty 方法
       if (key === 'hasOwnProperty') {
         return hasOwnProperty
       }
     }
 
+    // 获取 target 的 key 属性值
     const res = Reflect.get(target, key, receiver)
 
+    // 如果是内置的 Symbol，或者是不可追踪的 key，那么直接返回 res
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
     }
 
-    // 只读属性不会触发依赖，因此就没必要被收集起来
+    // 如果不是只读的，那么进行依赖收集
     if (!isReadonly) {
       track(target, TrackOpTypes.GET, key)
     }
 
+    // 如果是浅的，那么直接返回 res
     if (shallow) {
       return res
     }
 
+    // 如果 res 是 ref，对返回的值进行解包
     if (isRef(res)) {
-      // ref unwrapping - skip unwrap for Array + integer key.
-      // eg: arr[0] 这种情况直接跳过
+      // 对于数组和整数类型的 key，不进行解包
       return targetIsArray && isIntegerKey(key) ? res : res.value
     }
 
+    // 如果 res 是对象，递归代理
     if (isObject(res)) {
-      // Convert returned value into a proxy as well. we do the isObject check
-      // here to avoid invalid value warning. Also need to lazy access readonly
-      // and reactive here to avoid circular dependency.
+      // 将返回的值也转换为代理。我们在这里进行 isObject 检查，以避免无效的值警告。
+      // 还需要延迟访问 readonly 和 reactive，以避免循环依赖。
       return isReadonly ? readonly(res) : reactive(res)
     }
 
@@ -212,12 +223,16 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     super(false, shallow)
   }
 
+  /**
+   * 闭包返回一个 set 方法
+   */
   set(
     target: object,
     key: string | symbol,
     value: unknown,
     receiver: object,
   ): boolean {
+    // 获取旧的值
     let oldValue = (target as any)[key]
     if (!this._shallow) {
       const isOldValueReadonly = isReadonly(oldValue)

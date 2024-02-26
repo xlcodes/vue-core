@@ -68,11 +68,12 @@ export class ReactiveEffect<T = any> {
   _depsLength = 0
 
   constructor(
-    public fn: () => T,
-    public trigger: () => void,
-    public scheduler?: EffectScheduler,
+    public fn: () => T, // 副作用函数
+    public trigger: () => void, // 标志位，用于标识当前 ReactiveEffect 对象是否处于活动状态
+    public scheduler?: EffectScheduler, // 调度器，用于控制副作用函数何时执行
     scope?: EffectScope,
   ) {
+    // 记录当前 ReactiveEffect 对象的作用域
     recordEffectScope(this, scope)
   }
 
@@ -102,13 +103,17 @@ export class ReactiveEffect<T = any> {
 
   run() {
     this._dirtyLevel = DirtyLevels.NotDirty
+    // 如果当前 ReactiveEffect 对象不处于活动状态，直接返回 fn 的执行结果
     if (!this.active) {
       return this.fn()
     }
     let lastShouldTrack = shouldTrack
+    // 寻找当前 ReactiveEffect 对象的最顶层的父级作用域
     let lastEffect = activeEffect
     try {
+      // 将 shouldTrack 设置为 true （表示是否需要收集依赖）
       shouldTrack = true
+      // 将当前活动的 ReactiveEffect 对象设置为 “自己”
       activeEffect = this
       this._runnings++
       preCleanupEffect(this)
@@ -122,10 +127,13 @@ export class ReactiveEffect<T = any> {
   }
 
   stop() {
+    // 如果当前 ReactiveEffect 对象处于活动状态
     if (this.active) {
       preCleanupEffect(this)
       postCleanupEffect(this)
+      // 如果有 onStop 回调函数，就执行
       this.onStop?.()
+      // 将 active 设置为 false
       this.active = false
     }
   }
@@ -200,10 +208,13 @@ export function effect<T = any>(
   fn: () => T,
   options?: ReactiveEffectOptions,
 ): ReactiveEffectRunner {
+  // 如果 fn 对象上有 effect 属性
   if ((fn as ReactiveEffectRunner).effect instanceof ReactiveEffect) {
+    // 那么就将 fn 替换为 fn.effect.fn
     fn = (fn as ReactiveEffectRunner).effect.fn
   }
 
+  // 创建一个响应式副作用函数
   const _effect = new ReactiveEffect(fn, NOOP, () => {
     // [0, 1, 2].includes(_effect.dirty)
     // 当 _effect 的值可能被污染了或者已经被污染了的时候，就调用 run 方法
@@ -214,16 +225,20 @@ export function effect<T = any>(
   if (options) {
     // 将传递的 options 与当前对象合并
     extend(_effect, options)
-    // 如果传递的参数包含 scope，则创建一个新的作用域
+    // 如果配置项中有 scope 属性（该属性的作用是指定副作用函数的作用域）
+    // 那么就将 scope 属性记录到响应式副作用函数上（类似一个作用域链）
     if (options.scope) recordEffectScope(_effect, options.scope)
   }
-  // 不包含参数 或者参数配置了懒加载
-  // 则直接执行一次
+  // 如果没有配置项，或者配置项中没有 lazy 属性，或者配置项中的 lazy 属性为 false
+  // 那么就直接执行 run 方法
   if (!options || !options.lazy) {
     _effect.run()
   }
+  // 将 _effect.run 的 this 指向 _effect
   const runner = _effect.run.bind(_effect) as ReactiveEffectRunner
+  // 将响应式副作用函数赋值给 runner.effect
   runner.effect = _effect
+  // 返回 runner
   return runner
 }
 
